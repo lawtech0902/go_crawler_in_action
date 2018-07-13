@@ -5,7 +5,6 @@ import (
 	"golang.org/x/text/transform"
 	"io/ioutil"
 
-	"io"
 	"bufio"
 	"golang.org/x/net/html/charset"
 	"net/http"
@@ -27,13 +26,14 @@ func Fetch(url string) ([]byte, error) {
 	}
 
 	// gbk => utf-8
-	e := determineEncoding(resp.Body)
-	utf8Reader := transform.NewReader(resp.Body, e.NewDecoder())
+	bodyReader := bufio.NewReader(resp.Body)
+	e := determineEncoding(bodyReader)
+	utf8Reader := transform.NewReader(bodyReader, e.NewDecoder())
 	return ioutil.ReadAll(utf8Reader)
 }
 
-func determineEncoding(r io.Reader) encoding.Encoding {
-	bytes, err := bufio.NewReader(r).Peek(1024)
+func determineEncoding(r *bufio.Reader) encoding.Encoding {
+	bytes, err := r.Peek(1024)
 	if err != nil {
 		log.Printf("Fetcher error: %v", err)
 		return unicode.UTF8
