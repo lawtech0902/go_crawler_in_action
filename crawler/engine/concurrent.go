@@ -1,11 +1,10 @@
 package engine
 
-import "log"
-
 // 并发版engine
 type ConcurrentEngine struct {
 	Scheduler   Scheduler
 	WorkerCount int
+	ItemChan    chan interface{}
 }
 
 type Scheduler interface {
@@ -34,6 +33,16 @@ func createWorker(in chan Request, out chan ParseResult, ready ReadyNotifier) {
 	}()
 }
 
+func isDuplicate(s string) bool {
+	set := make(map[string]bool)
+	if _, ok := set[s]; ok {
+		return true
+	} else {
+		set[s] = true
+		return false
+	}
+}
+
 func (e *ConcurrentEngine) Run(seeds ...Request) {
 	out := make(chan ParseResult)
 	e.Scheduler.Run()
@@ -43,18 +52,24 @@ func (e *ConcurrentEngine) Run(seeds ...Request) {
 	}
 
 	for _, request := range seeds {
+		if isDuplicate(request.Url) {
+			continue
+		}
 		e.Scheduler.Submit(request)
 	}
 
-	itemCount := 0
 	for {
 		result := <-out
 		for _, item := range result.Items {
-			log.Printf("Got item #%d: %v", itemCount, item)
-			itemCount ++
+			go func() {
+				e.ItemChan <- item
+			}()
 		}
 
 		for _, request := range result.Requests {
+			if isDuplicate(request.Url) {
+				continue
+			}
 			e.Scheduler.Submit(request)
 		}
 	}
