@@ -15,7 +15,10 @@ func ItemSaver() chan interface{} {
 			log.Printf("Item Saver: got item #%d: %v", itemCount, item)
 			itemCount ++
 
-			save(item)
+			_, err := save(item)
+			if err != nil {
+				log.Printf("Item Saver: error saving item %v: %v", item, err)
+			}
 		}
 	}()
 	return out

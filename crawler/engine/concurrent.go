@@ -1,5 +1,9 @@
 package engine
 
+import (
+	"go_projects/go_crawler_in_action/crawler/model"
+)
+
 // 并发版engine
 type ConcurrentEngine struct {
 	Scheduler   Scheduler
@@ -33,14 +37,15 @@ func createWorker(in chan Request, out chan ParseResult, ready ReadyNotifier) {
 	}()
 }
 
-func isDuplicate(s string) bool {
-	set := make(map[string]bool)
-	if _, ok := set[s]; ok {
+var visitedUrls = make(map[string]bool)
+
+func isDuplicate(url string) bool {
+	if visitedUrls[url] {
 		return true
-	} else {
-		set[s] = true
-		return false
 	}
+
+	visitedUrls[url] = true
+	return false
 }
 
 func (e *ConcurrentEngine) Run(seeds ...Request) {
@@ -61,9 +66,11 @@ func (e *ConcurrentEngine) Run(seeds ...Request) {
 	for {
 		result := <-out
 		for _, item := range result.Items {
-			go func() {
-				e.ItemChan <- item
-			}()
+			if _, ok := item.(model.Profile); ok {
+				go func() {
+					e.ItemChan <- item
+				}()
+			}
 		}
 
 		for _, request := range result.Requests {
