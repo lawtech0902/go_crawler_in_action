@@ -8,13 +8,13 @@ import (
 )
 
 func main() {
-	// 单任务版
+	// single task
 	//engine.SimpleEngine{}.Run(engine.Request{
 	//	Url:        "http://www.zhenai.com/zhenghun",
 	//	ParserFunc: parser.ParseCityList,
 	//})
 
-	// 并发版
+	// concurrent
 	e := engine.ConcurrentEngine{
 		Scheduler:   &scheduler.QueuedScheduler{},
 		WorkerCount: 100,
