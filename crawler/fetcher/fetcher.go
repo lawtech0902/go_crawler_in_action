@@ -12,12 +12,14 @@ import (
 	"golang.org/x/text/encoding/unicode"
 	"log"
 	"time"
+	"go_projects/go_crawler_in_action/crawler_distributed/config"
 )
 
-var rateLimiter = time.Tick(10 * time.Millisecond)
+var rateLimiter = time.Tick(time.Second / config.QPS)
 
 func Fetch(url string) ([]byte, error) {
 	<-rateLimiter
+	log.Printf("Fetching url %s", url)
 
 	resp, err := http.Get(url)
 	if err != nil {
